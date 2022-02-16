@@ -1,0 +1,16 @@
+{
+  "name": "Hurdle",
+  "description": "A Chrome extension to help you finish Wordles",
+  "version": "1.0",
+  "manifest_version": 3,
+  "permissions": ["storage", "tabs"],
+  "action": {
+    "default_popup": "hurdle.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.nytimes.com/games/wordle/index.html"],
+      "js": ["wordle-content-script.js"]
+    }
+  ]
+}

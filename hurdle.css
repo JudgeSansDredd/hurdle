@@ -1,0 +1,27 @@
+body {
+  width: max-content;
+  font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 15px;
+  background-color: #2a496e;
+}
+
+.title {
+  font-size: 32px;
+}
+
+.grid {
+  font-size: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+}
+
+.grid div {
+  padding: 5px;
+  text-align: right;
+}

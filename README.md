@@ -1,3 +1,3 @@
 # Hurdle
 
-## A chrome extension to help you finish Wordles
+## A Chrome extension to help you finish Wordles
