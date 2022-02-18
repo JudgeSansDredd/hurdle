@@ -3,17 +3,9 @@
   "description": "A Chrome extension to help you finish Wordles",
   "version": "1.0",
   "manifest_version": 3,
-  "permissions": ["storage"],
+  "permissions": ["storage", "tabs", "scripting"],
+  "host_permissions": ["https://www.nytimes.com/games/wordle/index.html"],
   "action": {
     "default_popup": "hurdle/hurdle.html"
-  },
-  "content_scripts": [
-    {
-      "matches": ["https://www.nytimes.com/games/wordle/index.html"],
-      "js": ["hurdle/wordle-content-script.js"]
-    }
-  ],
-  "externally_connectable": {
-    "matches": ["https://www.nytimes.com/games/wordle/index.html"]
   }
 }

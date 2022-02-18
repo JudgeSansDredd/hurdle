@@ -2319,16 +2319,49 @@ let wordList = [
   "shave",
 ];
 
-button.addEventListener("click", () => {
-  chrome.storage.local.get("wordleState", ({ wordleState: state }) => {
-    let { boardState, evaluations } = state;
-    console.log(boardState);
-    let possible = calculatePossible(boardState, evaluations);
-    possibleDiv.innerHTML = `${possible.length} words`;
-    let bestGuessWord = bestGuess(possible);
-    guessDiv.innerHTML = bestGuessWord.toUpperCase();
+window.addEventListener("load", async () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+    var tab = tabs[0];
+    if (tab) {
+      // Sanity check
+      let injectionResults = await chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: true },
+        func: getWordleState,
+      });
+      let wordleState = injectionResults[0].result;
+      let { boardState, evaluations } = wordleState;
+      console.log(boardState);
+      let possible = calculatePossible(boardState, evaluations);
+      possibleDiv.innerHTML = `${possible.length} words`;
+      let bestGuessWord = bestGuess(possible);
+      guessDiv.innerHTML = bestGuessWord.toUpperCase();
+    }
   });
 });
+
+// button.addEventListener("click", async () => {
+//   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+//     var tab = tabs[0];
+//     if (tab) {
+//       // Sanity check
+//       let injectionResults = await chrome.scripting.executeScript({
+//         target: { tabId: tab.id, allFrames: true },
+//         func: getWordleState,
+//       });
+//       let wordleState = injectionResults[0].result;
+//       let { boardState, evaluations } = wordleState;
+//       console.log(boardState);
+//       let possible = calculatePossible(boardState, evaluations);
+//       possibleDiv.innerHTML = `${possible.length} words`;
+//       let bestGuessWord = bestGuess(possible);
+//       guessDiv.innerHTML = bestGuessWord.toUpperCase();
+//     }
+//   });
+// });
+
+function getWordleState() {
+  return JSON.parse(localStorage.getItem("nyt-wordle-state"));
+}
 
 class Guess {
   constructor(letter, index, result) {
