@@ -2330,7 +2330,6 @@ window.addEventListener("load", async () => {
       });
       let wordleState = injectionResults[0].result;
       let { boardState, evaluations } = wordleState;
-      console.log(boardState);
       let possible = calculatePossible(boardState, evaluations);
       possibleDiv.innerHTML = `${possible.length} words`;
       let bestGuessWord = bestGuess(possible);
@@ -2338,26 +2337,6 @@ window.addEventListener("load", async () => {
     }
   });
 });
-
-// button.addEventListener("click", async () => {
-//   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-//     var tab = tabs[0];
-//     if (tab) {
-//       // Sanity check
-//       let injectionResults = await chrome.scripting.executeScript({
-//         target: { tabId: tab.id, allFrames: true },
-//         func: getWordleState,
-//       });
-//       let wordleState = injectionResults[0].result;
-//       let { boardState, evaluations } = wordleState;
-//       console.log(boardState);
-//       let possible = calculatePossible(boardState, evaluations);
-//       possibleDiv.innerHTML = `${possible.length} words`;
-//       let bestGuessWord = bestGuess(possible);
-//       guessDiv.innerHTML = bestGuessWord.toUpperCase();
-//     }
-//   });
-// });
 
 function getWordleState() {
   return JSON.parse(localStorage.getItem("nyt-wordle-state"));
@@ -2395,15 +2374,21 @@ class Guess {
 
 function calculatePossible(boardState, evaluations) {
   guesses = [];
+  letters = [];
   boardState.forEach((word, wordNumber) => {
     if (word !== "") {
       for (let index = 0; index < word.length; index++) {
         let letter = word.substring(index, index + 1);
-        console.log(index, letter);
-        guesses.push(new Guess(letter, index, evaluations[wordNumber][index]));
+        if (!letters.includes(letter)) {
+          guesses.push(
+            new Guess(letter, index, evaluations[wordNumber][index])
+          );
+          letters.push(letter);
+        }
       }
     }
   });
+
   return wordList.filter((word) => {
     return guesses.every((guess) => guess.couldBe(word));
   });
@@ -2445,30 +2430,3 @@ function rateWord(word, possible) {
   }
   return rating;
 }
-
-// def bestGuess(possible):
-//     ratings = [
-//         {
-//             'word': word,
-//             'rating': rateWord(word, possible)
-//         }
-//         for word
-//         in possible
-//     ]
-//     bestRating = max([x['rating'] for x in ratings])
-//     possibleGuesses = [x for x in ratings if x['rating'] == bestRating]
-//     return choice(possibleGuesses)['word']
-
-// def rateWord(word, possible):
-//     numPossible = len(possible)
-//     rating = 0
-//     letters = []
-//     for letter in word:
-//         if letter in letters:
-//             continue
-//         else:
-//             letters.append(letter)
-//         numLetterIn = len([x for x in possible if letter in x])
-//         diff = numPossible - numLetterIn
-//         rating += min(numLetterIn, diff)
-//     return rating
