@@ -1,4 +1,4 @@
-[
+const wordList = [
   "cigar",
   "rebut",
   "sissy",
@@ -2313,5 +2313,9 @@
   "rower",
   "artsy",
   "rural",
-  "shave"
-]
+  "shave",
+];
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.sync.set({ wordList });
+});
