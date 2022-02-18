@@ -2319,13 +2319,6 @@ let wordList = [
   "shave",
 ];
 
-// chrome.runtime.onMessageExternal.addListener(
-//   (request, sender, sendResponse) => {
-//     console.log("Received message from " + sender + ": ", request);
-//     sendResponse({ received: true }); //respond however you like
-//   }
-// );
-
 button.addEventListener("click", () => {
   chrome.storage.local.get("wordleState", ({ wordleState: state }) => {
     let { boardState, evaluations } = state;
