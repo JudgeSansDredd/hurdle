@@ -8,7 +8,7 @@
     "128": "hurdleicon.png"
   },
   "manifest_version": 3,
-  "permissions": ["storage", "tabs", "scripting"],
+  "permissions": ["tabs", "scripting"],
   "host_permissions": ["https://www.nytimes.com/games/wordle/index.html"],
   "action": {
     "default_popup": "hurdle/hurdle.html"
