@@ -1,7 +1,8 @@
-let possibleDiv = document.getElementById("possible");
-let guessDiv = document.getElementById("guess");
-let button = document.getElementById("button");
-let wordList = [
+const possibleDiv = document.getElementById("possible");
+const guessDiv = document.getElementById("guess");
+const button = document.getElementById("button");
+const gridDiv = document.getElementById("grid");
+const wordList = [
   "cigar",
   "rebut",
   "sissy",
@@ -2323,17 +2324,21 @@ window.addEventListener("load", async () => {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     var tab = tabs[0];
     if (tab) {
-      // Sanity check
-      let injectionResults = await chrome.scripting.executeScript({
-        target: { tabId: tab.id, allFrames: true },
-        func: getWordleState,
-      });
-      let wordleState = injectionResults[0].result;
-      let { boardState, evaluations } = wordleState;
-      let possible = calculatePossible(boardState, evaluations);
-      possibleDiv.innerHTML = `${possible.length} words`;
-      let bestGuessWord = bestGuess(possible);
-      guessDiv.innerHTML = bestGuessWord.toUpperCase();
+      if (tab.url && tab.url.includes("nytimes.com/games/wordle")) {
+        // We're on wordle
+        const injectionResults = await chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: true },
+          func: getWordleState,
+        });
+        const { boardState, evaluations } = injectionResults[0].result;
+        const possible = calculatePossible(boardState, evaluations);
+        possibleDiv.innerHTML = `${possible.length} words`;
+        guessDiv.innerHTML = bestGuess(possible).toUpperCase();
+      } else {
+        // We're not on the wordle site
+        gridDiv.innerHTML =
+          '<a href="https://www.nytimes.com/games/wordle/index.html" target="_blank" style="color: white; text-align: center;">Go to Wordle!</a>';
+      }
     }
   });
 });
