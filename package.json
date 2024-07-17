@@ -2,6 +2,12 @@
   "name": "hurdle",
   "module": "index.ts",
   "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "prod": "vite preview",
+    "build": "vite build",
+    "watch": "vite build --watch"
+  },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

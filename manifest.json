@@ -1,7 +1,7 @@
 {
   "name": "Hurdle",
   "description": "A Chrome extension to help you finish Wordles",
-  "version": "1.2",
+  "version": "2.0",
   "icons": {
     "16": "hurdleicon.png",
     "48": "hurdleicon.png",
@@ -11,6 +11,6 @@
   "permissions": ["scripting"],
   "host_permissions": ["https://www.nytimes.com/games/wordle/index.html"],
   "action": {
-    "default_popup": "hurdle/hurdle.html"
+    "default_popup": "dist/index.html"
   }
 }
