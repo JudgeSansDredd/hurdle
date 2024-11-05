@@ -22,6 +22,7 @@ export const useNextGuess = (attempts: Attempt[]) => {
       const response = generator.next();
       if (!ignore) {
         setProgress(response.value.progress);
+        setNextGuesses(response.value.results);
       }
       if (!response.done) {
         requestAnimationFrame(runChunk);

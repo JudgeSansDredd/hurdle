@@ -52,7 +52,6 @@ export interface LetterEvaluation {
 
 export interface LetterPossibility {
   letter: string;
-  isPresent: boolean;
   possiblePositions: number[];
 }
 

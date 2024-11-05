@@ -52,10 +52,12 @@ export default function App() {
     <Layout>
       <TileMap attempts={attempts} />
       {processing && <ProgressBar percentage={progress ?? 0} />}
-      {!processing &&
-        nextGuesses.map((guess, index) => {
+      {nextGuesses.length > 0 &&
+        nextGuesses.slice(0, 10).map((guess, index) => {
           return (
-            <div key={`guess-${index}`}>{`${guess.word}: ${guess.bits}`}</div>
+            <div key={`guess-${index}`}>{`${guess.word.toUpperCase()}: ${
+              Math.round(guess.bits * 1000) / 1000
+            }`}</div>
           );
         })}
     </Layout>

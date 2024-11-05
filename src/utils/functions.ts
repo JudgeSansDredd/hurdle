@@ -71,30 +71,33 @@ const _getPossiblePatterns = (
   );
 };
 
-// !: This function is not working properly
 export const getWordIsPossible = (
   word: string,
   attempts: Attempt[]
 ): boolean => {
   const letterPossibilities = _getLetterPossibilities(attempts);
-  const corrects = letterPossibilities.filter(
-    (letterPossibility) =>
-      letterPossibility.isPresent &&
-      letterPossibility.possiblePositions.length === 1
-  );
-  if (
-    corrects.some(
-      (correct) => correct.possiblePositions[0] !== word.indexOf(correct.letter)
-    )
-  )
-    return false;
-  return word.split("").every((letter, position) => {
-    const letterPossibility = letterPossibilities.find(
-      (letterPossibility) => letterPossibility.letter === letter
-    );
-    if (!letterPossibility) return true;
-    if (!letterPossibility.isPresent) return false;
-    return letterPossibility.possiblePositions.includes(position);
+
+  return letterPossibilities.every((letterPossibility) => {
+    // If letter is absent
+    if (letterPossibility.possiblePositions.length === 0) {
+      return !word.includes(letterPossibility.letter);
+    }
+    // If letter is correct
+    if (letterPossibility.possiblePositions.length === 1) {
+      return (
+        word[letterPossibility.possiblePositions[0]] ===
+        letterPossibility.letter
+      );
+    }
+    // Letter is present
+    // Check that the letter is present in the word
+    if (!word.includes(letterPossibility.letter)) return false;
+    // Check that the letter is not where we have found it is _not_ possible
+    return [0, 1, 2, 3, 4]
+      .filter((index) => !letterPossibility.possiblePositions.includes(index))
+      .every(
+        (cannotBeIndex) => word[cannotBeIndex] !== letterPossibility.letter
+      );
   });
 };
 
@@ -108,9 +111,6 @@ const _getLetterPossibilities = (attempts: Attempt[]): LetterPossibility[] => {
       );
       if (!letterPossibility) {
         const { letter } = letterEvaluation;
-        const isPresent =
-          letterEvaluation.evaluation === "present" ||
-          letterEvaluation.evaluation === "correct";
         let possiblePositions: number[] = [];
         if (letterEvaluation.evaluation === "correct") {
           possiblePositions = [letterEvaluation.position];
@@ -118,24 +118,25 @@ const _getLetterPossibilities = (attempts: Attempt[]): LetterPossibility[] => {
           possiblePositions = [0, 1, 2, 3, 4].filter(
             (possiblePosition) => possiblePosition !== letterEvaluation.position
           );
+        } else {
+          possiblePositions = [];
         }
         const newLetterPossibility: LetterPossibility = {
           letter,
-          isPresent,
           possiblePositions,
         };
         letterPossibilities.push(newLetterPossibility);
       } else {
         if (letterEvaluation.evaluation === "correct") {
-          letterPossibility.isPresent = true;
           letterPossibility.possiblePositions = [letterEvaluation.position];
         } else if (letterEvaluation.evaluation === "present") {
-          letterPossibility.isPresent = true;
           letterPossibility.possiblePositions =
             letterPossibility.possiblePositions.filter(
               (possiblePosition) =>
                 possiblePosition !== letterEvaluation.position
             );
+        } else {
+          letterPossibility.possiblePositions = [];
         }
       }
     });
