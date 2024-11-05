@@ -32,6 +32,7 @@ export default function App() {
   }, []);
 
   const { processing, nextGuesses, progress } = useNextGuess(attempts);
+  nextGuesses.sort((a, b) => b.bits - a.bits);
 
   if (!attempts) {
     return (

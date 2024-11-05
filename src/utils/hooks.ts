@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { getNextGuess } from "./functions";
+import { getWordIsPossible, nextGuessGenerator } from "./functions";
 import { Attempt, BitCalculated } from "./types";
+import { possibleWordList } from "./wordList";
 
 export const useNextGuess = (attempts: Attempt[]) => {
   const [processing, setProcessing] = useState<boolean>(false);
@@ -8,14 +9,35 @@ export const useNextGuess = (attempts: Attempt[]) => {
   const [progress, setProgress] = useState<number | null>(null);
 
   useEffect(() => {
-    if (processing) return;
+    let ignore = false;
     setProcessing(true);
+    setProgress(0);
     setNextGuesses([]);
-    const newNextGuesses = getNextGuess(attempts);
-    setNextGuesses(newNextGuesses);
-    setProcessing(false);
-    setProgress(null);
-  }, []);
+    const possibleWords = possibleWordList.filter((word) =>
+      getWordIsPossible(word, attempts)
+    );
+    console.log("🚀 ~ useEffect ~ possibleWords:", possibleWords);
+    const generator = nextGuessGenerator(attempts, possibleWords);
+    requestAnimationFrame(function runChunk() {
+      const response = generator.next();
+      if (!ignore) {
+        setProgress(response.value.progress);
+      }
+      if (!response.done) {
+        requestAnimationFrame(runChunk);
+      } else {
+        if (!ignore) {
+          setProcessing(false);
+          setProgress(null);
+          setNextGuesses(response.value.results);
+        }
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [attempts.length]);
 
   return { processing, nextGuesses, progress };
 };

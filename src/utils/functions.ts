@@ -1,10 +1,10 @@
 import {
   Attempt,
+  BitCalculated,
   EvaluationType,
   LetterPossibility,
   LocalStorageType,
 } from "./types";
-import { guessableWordList, possibleWordList } from "./wordList";
 
 export const getLocalStorage = () => {
   const gameStateRaw = localStorage.getItem("games-state-wordleV2/ANON");
@@ -32,7 +32,7 @@ export const getAttempts = (
 ): Attempt[] => {
   if (!localStorage || !tiles) return [];
 
-  return localStorage.states[0].data.boardState
+  const response = localStorage.states[0].data.boardState
     .filter((guess) => guess.length > 0)
     .map((guess, index) => {
       const evaluationStartIndex = index * 5;
@@ -47,35 +47,48 @@ export const getAttempts = (
         evaluation: tilesForGuess[position].state,
       }));
     });
+  return response;
 };
 
-const _getPossibleResults = (
-  possibleResults?: EvaluationType[][]
+const _getPossiblePatterns = (
+  possiblePatterns?: EvaluationType[][]
 ): EvaluationType[][] => {
   const evaluationTypes: EvaluationType[] = ["present", "absent", "correct"];
-  if (!possibleResults) {
+  if (!possiblePatterns) {
     // Handle the first layer
-    return _getPossibleResults(evaluationTypes.map((type) => [type]));
+    return _getPossiblePatterns(evaluationTypes.map((type) => [type]));
   }
-  if (possibleResults[0].length === 5) {
+  if (possiblePatterns[0].length === 5) {
     // Hnadle the last layer
-    return possibleResults;
+    return possiblePatterns;
   }
 
   // Handle every other layer
-  return _getPossibleResults(
-    possibleResults.flatMap((possibleResult) =>
+  return _getPossiblePatterns(
+    possiblePatterns.flatMap((possibleResult) =>
       evaluationTypes.map((type) => [...possibleResult, type])
     )
   );
 };
 
+// !: This function is not working properly
 export const getWordIsPossible = (
-  word: string[],
+  word: string,
   attempts: Attempt[]
 ): boolean => {
   const letterPossibilities = _getLetterPossibilities(attempts);
-  return word.every((letter, position) => {
+  const corrects = letterPossibilities.filter(
+    (letterPossibility) =>
+      letterPossibility.isPresent &&
+      letterPossibility.possiblePositions.length === 1
+  );
+  if (
+    corrects.some(
+      (correct) => correct.possiblePositions[0] !== word.indexOf(correct.letter)
+    )
+  )
+    return false;
+  return word.split("").every((letter, position) => {
     const letterPossibility = letterPossibilities.find(
       (letterPossibility) => letterPossibility.letter === letter
     );
@@ -94,20 +107,22 @@ const _getLetterPossibilities = (attempts: Attempt[]): LetterPossibility[] => {
           letterPossibility.letter === letterEvaluation.letter
       );
       if (!letterPossibility) {
+        const { letter } = letterEvaluation;
+        const isPresent =
+          letterEvaluation.evaluation === "present" ||
+          letterEvaluation.evaluation === "correct";
+        let possiblePositions: number[] = [];
+        if (letterEvaluation.evaluation === "correct") {
+          possiblePositions = [letterEvaluation.position];
+        } else if (letterEvaluation.evaluation === "present") {
+          possiblePositions = [0, 1, 2, 3, 4].filter(
+            (possiblePosition) => possiblePosition !== letterEvaluation.position
+          );
+        }
         const newLetterPossibility: LetterPossibility = {
-          letter: letterEvaluation.letter,
-          isPresent:
-            letterEvaluation.evaluation === "present" ||
-            letterEvaluation.evaluation === "correct",
-          possiblePositions:
-            letterEvaluation.evaluation === "absent"
-              ? []
-              : letterEvaluation.evaluation === "correct"
-              ? [letterEvaluation.position]
-              : [0, 1, 2, 3, 4].filter(
-                  (possiblePosition) =>
-                    letterEvaluation.position !== possiblePosition
-                ),
+          letter,
+          isPresent,
+          possiblePositions,
         };
         letterPossibilities.push(newLetterPossibility);
       } else {
@@ -128,54 +143,92 @@ const _getLetterPossibilities = (attempts: Attempt[]): LetterPossibility[] => {
   return letterPossibilities;
 };
 
-export const calculateBits = (
-  word: string[],
+// export const calculateBits = (
+//   word: string[],
+//   attempts: Attempt[],
+//   possibleWords: string[]
+// ) => {
+//   // Check if the word is even possible
+//   if (!getWordIsPossible(word, attempts)) return 0;
+//   // Calculate the bits
+//   const possiblePatterns = _getPossiblePatterns();
+//   return (
+//     possiblePatterns
+//       .map((possibleResult) => {
+//         const theoreticalAttempts = [
+//           ...attempts,
+//           word.map((letter, position) => ({
+//             letter,
+//             position,
+//             evaluation: possibleResult[position],
+//           })),
+//         ];
+//         const theoreticalPossibleWords = possibleWords.filter((word) =>
+//           getWordIsPossible(word.split(""), theoreticalAttempts)
+//         );
+
+//         const p =
+//           (possibleWords.length - theoreticalPossibleWords.length) /
+//           possibleWords.length;
+//         if (p === 0 || p === 1) return 0;
+//         return -1 * Math.log2(p);
+//       })
+//       .reduce((a, b) => a + b, 0) / possiblePatterns.length
+//   );
+// };
+
+function* calculateBitsGenerator(
+  word: string,
   attempts: Attempt[],
   possibleWords: string[]
-) => {
-  // Check if the word is even possible
-  if (!getWordIsPossible(word, attempts)) return 0;
-  // Calculate the bits
-  const possibleResults = _getPossibleResults();
-  return (
-    possibleResults
-      .map((possibleResult) => {
-        const theoreticalAttempts = [
-          ...attempts,
-          word.map((letter, position) => ({
-            letter,
-            position,
-            evaluation: possibleResult[position],
-          })),
-        ];
-        const theoreticalPossibleWords = possibleWords.filter((word) =>
-          getWordIsPossible(word.split(""), theoreticalAttempts)
-        );
+) {
+  const possiblePatterns = _getPossiblePatterns();
+  const totalPatterns = possiblePatterns.length;
+  let current = 0;
+  for (let index = 0; index < possiblePatterns.length; index++) {
+    const possibleResult = possiblePatterns[index];
+    const theoreticalAttempts = [
+      ...attempts,
+      word.split("").map((letter, position) => {
+        return {
+          letter,
+          position,
+          evaluation: possibleResult[position],
+        };
+      }),
+    ];
+    const theoreticalPossibleWords = possibleWords.filter((word) =>
+      getWordIsPossible(word, theoreticalAttempts)
+    );
+    const p =
+      (possibleWords.length - theoreticalPossibleWords.length) /
+      possibleWords.length;
+    if (p !== 0 && p !== 1) {
+      current += -1 * Math.log2(p);
+    }
+    yield current / totalPatterns;
+  }
+  return current / totalPatterns;
+}
 
-        const p =
-          (possibleWords.length - theoreticalPossibleWords.length) /
-          possibleWords.length;
-        if (p === 0 || p === 1) return 0;
-        return -1 * Math.log2(p);
-      })
-      .reduce((a, b) => a + b, 0) / possibleResults.length
-  );
-};
-
-export function getNextGuess(attempts: Attempt[]) {
-  const guessableWords = guessableWordList.filter((word) =>
-    getWordIsPossible(word.split(""), attempts)
-  );
-  const possibleWords = possibleWordList.filter((word) =>
-    getWordIsPossible(word.split(""), attempts)
-  );
-  const calculatedBits: { word: string; bits: number }[] = guessableWords
-    .map((word) => {
-      return {
-        word,
-        bits: calculateBits(word.split(""), attempts, possibleWords),
-      };
-    })
-    .sort((a, b) => a.bits - b.bits);
-  return calculatedBits.slice(0, 10);
+export function* nextGuessGenerator(
+  attempts: Attempt[],
+  possibleWords: string[]
+) {
+  const results: BitCalculated[] = [];
+  for (let index = 0; index < possibleWords.length; index++) {
+    const word = possibleWords[index];
+    const generator = calculateBitsGenerator(word, attempts, possibleWords);
+    let current = generator.next();
+    while (!current.done) {
+      current = generator.next();
+      yield { results, progress: (100 * index) / possibleWords.length };
+    }
+    results.push({
+      word,
+      bits: current.value,
+    });
+    yield { results, progress: (100 * index) / possibleWords.length };
+  }
+  return { results, progress: 100 };
 }
