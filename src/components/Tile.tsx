@@ -1,15 +1,15 @@
-import { colors } from "../utils/resultTypes";
+import { EvaluationType } from "../utils/types";
 
 interface PropType {
   letter: string;
-  color: colors;
+  evaluation: EvaluationType;
 }
 
 export default function Tile(props: PropType) {
   const colorClass =
-    props.color === "green"
+    props.evaluation === "correct"
       ? "bg-wordle-green"
-      : props.color === "yellow"
+      : props.evaluation === "present"
       ? "bg-wordle-yellow"
       : "bg-wordle-gray";
   return (

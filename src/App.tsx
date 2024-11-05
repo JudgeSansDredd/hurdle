@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
+import ProgressBar from "./components/ProgressBar";
 import TileMap from "./components/TileMap";
 import Layout from "./layouts";
-import { getGameState, getLocalStorage, getTiles } from "./utils/functions";
+import { getAttempts, getLocalStorage, getTiles } from "./utils/functions";
+import { useNextGuess } from "./utils/hooks";
 import { Attempt } from "./utils/types";
 
 export default function App() {
-  const [gameState, setGameState] = useState<Attempt[]>([]);
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
   useEffect(() => {
-    console.log("useEffect");
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       var tab = tabs[0];
       if (tab) {
@@ -22,18 +23,17 @@ export default function App() {
             func: getTiles,
           });
 
-          setGameState(
-            getGameState(
-              localStorage[0].result ?? null,
-              tiles[0].result ?? null
-            )
+          setAttempts(
+            getAttempts(localStorage[0].result ?? null, tiles[0].result ?? null)
           );
         }
       }
     });
   }, []);
 
-  if (!gameState) {
+  const { processing, nextGuesses, progress } = useNextGuess(attempts);
+
+  if (!attempts) {
     return (
       <Layout>
         <a
@@ -49,7 +49,14 @@ export default function App() {
 
   return (
     <Layout>
-      <TileMap gameState={gameState} />
+      <TileMap attempts={attempts} />
+      {processing && <ProgressBar percentage={progress ?? 0} />}
+      {!processing &&
+        nextGuesses.map((guess, index) => {
+          return (
+            <div key={`guess-${index}`}>{`${guess.word}: ${guess.bits}`}</div>
+          );
+        })}
     </Layout>
   );
 }

@@ -2,19 +2,19 @@ import { Attempt } from "../utils/types";
 import Tile from "./Tile";
 
 interface PropType {
-  gameState: Attempt[];
+  attempts: Attempt[];
 }
 
-export default function TileMap({ gameState }: PropType) {
+export default function TileMap({ attempts }: PropType) {
   return (
     <div className="grid grid-cols-5 gap-2">
-      {gameState.flatMap((attempt, index) => {
-        return attempt.guess.split("").map((letter, letterIndex) => {
+      {attempts.flatMap((attempt, index) => {
+        return attempt.map((letterEvaluation, letterEvaluationIndex) => {
           return (
             <Tile
-              key={`${index}-${letterIndex}`}
-              letter={letter}
-              color={attempt.evaluation[letterIndex]}
+              key={`${index}-${letterEvaluationIndex}`}
+              letter={letterEvaluation.letter}
+              evaluation={letterEvaluation.evaluation}
             />
           );
         });

@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "vite",
     "prod": "vite preview",
-    "build": "vite build",
-    "watch": "vite build --watch"
+    "build": "tsc --noEmit && vite build",
+    "watch": "vite build --watch",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "react": "^18.3.1",

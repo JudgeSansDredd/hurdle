@@ -2310,7 +2310,7 @@ export const possibleWordList = [
   "augur",
 ];
 
-export const guessableWords = [
+export const guessableWordList = [
   "aahed",
   "aalii",
   "aapas",

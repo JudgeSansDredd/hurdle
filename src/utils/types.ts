@@ -1,5 +1,3 @@
-import { colors } from "./resultTypes";
-
 export interface LocalStorageType {
   states: State[];
 }
@@ -42,7 +40,23 @@ interface Guesses {
   fail: number;
 }
 
-export interface Attempt {
-  guess: string;
-  evaluation: colors[];
+export type EvaluationType = "present" | "absent" | "correct";
+
+export type Attempt = LetterEvaluation[];
+
+export interface LetterEvaluation {
+  letter: string;
+  position: number;
+  evaluation: EvaluationType;
+}
+
+export interface LetterPossibility {
+  letter: string;
+  isPresent: boolean;
+  possiblePositions: number[];
+}
+
+export interface BitCalculated {
+  word: string;
+  bits: number;
 }
