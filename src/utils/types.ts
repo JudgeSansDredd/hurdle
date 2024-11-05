@@ -1,4 +1,6 @@
-export interface GameStateType {
+import { colors } from "./resultTypes";
+
+export interface LocalStorageType {
   states: State[];
 }
 
@@ -38,4 +40,9 @@ interface Guesses {
   "5": number;
   "6": number;
   fail: number;
+}
+
+export interface Attempt {
+  guess: string;
+  evaluation: colors[];
 }

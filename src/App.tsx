@@ -1,22 +1,33 @@
 import { useEffect, useState } from "react";
+import TileMap from "./components/TileMap";
 import Layout from "./layouts";
-import { getGameState } from "./utils/functions";
-import { GameStateType } from "./utils/types";
+import { getGameState, getLocalStorage, getTiles } from "./utils/functions";
+import { Attempt } from "./utils/types";
 
 export default function App() {
-  const [gameState, setGameState] = useState<GameStateType | null>(null);
-
+  const [gameState, setGameState] = useState<Attempt[]>([]);
   useEffect(() => {
+    console.log("useEffect");
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       var tab = tabs[0];
       if (tab) {
         if (tab.url && tab.url.includes("nytimes.com/games/wordle")) {
           // We're on wordle
-          const injectionResults = await chrome.scripting.executeScript({
+          const localStorage = await chrome.scripting.executeScript({
             target: { tabId: tab.id ?? 0, allFrames: true },
-            func: getGameState,
+            func: getLocalStorage,
           });
-          setGameState(injectionResults[0].result ?? null);
+          const tiles = await chrome.scripting.executeScript({
+            target: { tabId: tab.id ?? 0, allFrames: true },
+            func: getTiles,
+          });
+
+          setGameState(
+            getGameState(
+              localStorage[0].result ?? null,
+              tiles[0].result ?? null
+            )
+          );
         }
       }
     });
@@ -24,25 +35,21 @@ export default function App() {
 
   if (!gameState) {
     return (
-      <a
-        href="https://www.nytimes.com/games/wordle/index.html"
-        target="_blank"
-        style={{ color: "white", textAlign: "center" }}
-      >
-        Go to Wordle!
-      </a>
+      <Layout>
+        <a
+          href="https://www.nytimes.com/games/wordle/index.html"
+          target="_blank"
+          style={{ color: "white", textAlign: "center" }}
+        >
+          Go to Wordle!
+        </a>
+      </Layout>
     );
   }
 
   return (
     <Layout>
-      <div>{JSON.stringify(gameState)}</div>
-      <div id="grid" className="grid grid-cols-2">
-        <div>Possible remaining:</div>
-        <div id="possible">-----</div>
-        <div>Suggested Guess:</div>
-        <div id="guess">-----</div>
-      </div>
+      <TileMap gameState={gameState} />
     </Layout>
   );
 }
