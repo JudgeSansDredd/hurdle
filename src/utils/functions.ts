@@ -73,10 +73,8 @@ const _getPossiblePatterns = (
 
 export const getWordIsPossible = (
   word: string,
-  attempts: Attempt[]
+  letterPossibilities: LetterPossibility[]
 ): boolean => {
-  const letterPossibilities = _getLetterPossibilities(attempts);
-
   return letterPossibilities.every((letterPossibility) => {
     // If letter is absent
     if (letterPossibility.possiblePositions.length === 0) {
@@ -101,7 +99,9 @@ export const getWordIsPossible = (
   });
 };
 
-const _getLetterPossibilities = (attempts: Attempt[]): LetterPossibility[] => {
+export const getLetterPossibilities = (
+  attempts: Attempt[]
+): LetterPossibility[] | null => {
   const letterPossibilities: LetterPossibility[] = [];
   attempts.forEach((attempt) => {
     attempt.forEach((letterEvaluation) => {
@@ -127,6 +127,23 @@ const _getLetterPossibilities = (attempts: Attempt[]): LetterPossibility[] => {
         };
         letterPossibilities.push(newLetterPossibility);
       } else {
+        // We use this to look at theoretical possibilities, so let's be on the lookout
+        // for anything that -isn't- possible: an 'absent' where we have a
+        // 'present' or 'correct', and vice versa
+        if (
+          letterPossibility.possiblePositions.length > 0 &&
+          letterEvaluation.evaluation === "absent"
+        ) {
+          // We already know the letter is present or correct, so we can't have an absent
+          return null;
+        }
+        if (
+          letterPossibility.possiblePositions.length === 0 &&
+          letterEvaluation.evaluation !== "absent"
+        ) {
+          // We already know the letter is absent, so we can't have a non-absent
+          return null;
+        }
         if (letterEvaluation.evaluation === "correct") {
           letterPossibility.possiblePositions = [letterEvaluation.position];
         } else if (letterEvaluation.evaluation === "present") {
@@ -144,40 +161,6 @@ const _getLetterPossibilities = (attempts: Attempt[]): LetterPossibility[] => {
   return letterPossibilities;
 };
 
-// export const calculateBits = (
-//   word: string[],
-//   attempts: Attempt[],
-//   possibleWords: string[]
-// ) => {
-//   // Check if the word is even possible
-//   if (!getWordIsPossible(word, attempts)) return 0;
-//   // Calculate the bits
-//   const possiblePatterns = _getPossiblePatterns();
-//   return (
-//     possiblePatterns
-//       .map((possibleResult) => {
-//         const theoreticalAttempts = [
-//           ...attempts,
-//           word.map((letter, position) => ({
-//             letter,
-//             position,
-//             evaluation: possibleResult[position],
-//           })),
-//         ];
-//         const theoreticalPossibleWords = possibleWords.filter((word) =>
-//           getWordIsPossible(word.split(""), theoreticalAttempts)
-//         );
-
-//         const p =
-//           (possibleWords.length - theoreticalPossibleWords.length) /
-//           possibleWords.length;
-//         if (p === 0 || p === 1) return 0;
-//         return -1 * Math.log2(p);
-//       })
-//       .reduce((a, b) => a + b, 0) / possiblePatterns.length
-//   );
-// };
-
 function* calculateBitsGenerator(
   word: string,
   attempts: Attempt[],
@@ -185,25 +168,32 @@ function* calculateBitsGenerator(
 ) {
   const possiblePatterns = _getPossiblePatterns();
   const totalPatterns = possiblePatterns.length;
+  let skippedPatterns = 0;
   let current = 0;
   for (let index = 0; index < possiblePatterns.length; index++) {
-    const possibleResult = possiblePatterns[index];
+    const possiblePattern = possiblePatterns[index];
     const theoreticalAttempts = [
       ...attempts,
       word.split("").map((letter, position) => {
         return {
           letter,
           position,
-          evaluation: possibleResult[position],
+          evaluation: possiblePattern[position],
         };
       }),
     ];
+    const theoreticalLetterPossibilities =
+      getLetterPossibilities(theoreticalAttempts);
+    if (theoreticalLetterPossibilities === null) {
+      // The attempts/letterPossibilities are paradoxical, so let's skip them
+      skippedPatterns++;
+      yield (current - skippedPatterns) / (totalPatterns - skippedPatterns);
+      continue;
+    }
     const theoreticalPossibleWords = possibleWords.filter((word) =>
-      getWordIsPossible(word, theoreticalAttempts)
+      getWordIsPossible(word, theoreticalLetterPossibilities)
     );
-    const p =
-      (possibleWords.length - theoreticalPossibleWords.length) /
-      possibleWords.length;
+    const p = theoreticalPossibleWords.length / possibleWords.length;
     if (p !== 0 && p !== 1) {
       current += -1 * Math.log2(p);
     }

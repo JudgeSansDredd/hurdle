@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getWordIsPossible, nextGuessGenerator } from "./functions";
+import { getLetterPossibilities, nextGuessGenerator } from "./functions";
 import { Attempt, BitCalculated } from "./types";
 import { possibleWordList } from "./wordList";
 
@@ -13,11 +13,14 @@ export const useNextGuess = (attempts: Attempt[]) => {
     setProcessing(true);
     setProgress(0);
     setNextGuesses([]);
-    const possibleWords = possibleWordList.filter((word) =>
-      getWordIsPossible(word, attempts)
-    );
-    console.log("🚀 ~ useEffect ~ possibleWords:", possibleWords);
-    const generator = nextGuessGenerator(attempts, possibleWords);
+    const letterPossibilities = getLetterPossibilities(attempts);
+    if (letterPossibilities === null) {
+      setProcessing(false);
+      setProgress(null);
+      setNextGuesses([]);
+      return;
+    }
+    const generator = nextGuessGenerator(attempts, possibleWordList);
     requestAnimationFrame(function runChunk() {
       const response = generator.next();
       if (!ignore) {
